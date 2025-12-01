@@ -1,0 +1,101 @@
+/**
+ * ============================================
+ * SUMMARY PAGE - หน้าสรุปข้อมูลเดือนปัจจุบัน
+ * ============================================
+ * 
+ * แสดงข้อมูลจากตาราง transactions (Monthly)
+ */
+
+async function initSummaryPage() {
+  const loadingEl = document.getElementById('loading-overlay');
+  if (loadingEl) loadingEl.style.display = 'flex';
+  
+  try {
+    // โหลดข้อมูลเดือนปัจจุบัน
+    const transactions = await loadMonthlyTransactions();
+    
+    // แสดงยอดสรุป
+    const totals = calculateTotals(transactions);
+    
+    document.getElementById('total-income').textContent = formatMoney(totals.income);
+    document.getElementById('total-expense').textContent = formatMoney(totals.expense);
+    document.getElementById('net-balance').textContent = formatMoney(totals.income - totals.expense);
+    document.getElementById('total-count').textContent = transactions.length;
+    
+    // สร้างกราฟ
+    createBarChart(
+      document.getElementById('barChart'),
+      totals.income,
+      totals.expense
+    );
+    
+    const categoryData = calculateCategoryTotals(transactions);
+    createPieChart(
+      document.getElementById('pieChart'),
+      categoryData
+    );
+    
+    const now = new Date();
+    const dailyData = calculateDailyTotals(transactions, now.getFullYear(), now.getMonth());
+    createDailyChart(
+      document.getElementById('dailyChart'),
+      dailyData.labels,
+      dailyData.income,
+      dailyData.expense
+    );
+    
+    // Top Categories
+    const categoryList = document.getElementById('category-list');
+    const sortedCategories = Object.entries(categoryData)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5);
+    
+    const maxExpense = sortedCategories[0]?.[1] || 1;
+    
+    sortedCategories.forEach(([category, amount]) => {
+      const li = document.createElement('li');
+      li.className = 'category-item';
+      li.innerHTML = `
+        <div style="flex: 1;">
+          <div style="display: flex; justify-content: space-between;">
+            <span>${category}</span>
+            <span style="color: var(--expense); font-weight: 700;">${formatMoney(amount)}</span>
+          </div>
+          <div class="category-bar" style="width: ${(amount / maxExpense) * 100}%;"></div>
+        </div>
+      `;
+      categoryList.appendChild(li);
+    });
+    
+    if (sortedCategories.length === 0) {
+      categoryList.innerHTML = '<li style="text-align: center; padding: 20px; opacity: 0.6;">No expense data yet</li>';
+    }
+    
+    // Next Month Button - รีเซ็ตเฉพาะ Monthly
+    document.getElementById('next-month-btn')?.addEventListener('click', async () => {
+      if (transactions.length === 0) {
+        alert('ไม่มีรายการที่จะรีเซ็ต');
+        return;
+      }
+      
+      if (confirm('รีเซ็ตข้อมูลเดือนนี้?\n\n⚠️ ข้อมูลในหน้า Summary จะถูกล้าง\n✅ ข้อมูลในหน้า All Time ยังคงอยู่')) {
+        if (loadingEl) loadingEl.style.display = 'flex';
+        
+        await resetMonthlyData();
+        
+        alert('รีเซ็ตข้อมูลเดือนนี้แล้ว!\n\nข้อมูลเก่ายังดูได้ในหน้า All Time Summary');
+        window.location.reload();
+      }
+    });
+    
+    console.log('Summary page loaded!');
+    
+  } catch (error) {
+    console.error('Error loading summary:', error);
+    alert('ไม่สามารถโหลดข้อมูลได้ กรุณาลองใหม่');
+  }
+  
+  if (loadingEl) loadingEl.style.display = 'none';
+}
+
+initSummaryPage();

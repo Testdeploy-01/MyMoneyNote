@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Summary - My Money Notes</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700&family=Space+Grotesk:wght@500;700&family=Shadows+Into+Light&family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      display: block;
+    }
+    main.summary-page {
+      display: block;
+      max-width: 900px;
+      margin: 0 auto;
+      flex-direction: column;
+    }
+    .top-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .next-month-btn {
+      background: #43b37b;
+    }
+    .all-btn {
+      background: #7b63d7;
+      color: #fff;
+      text-decoration: none;
+    }
+    .action-btns {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .chart-container {
+      background: var(--paper-card);
+      border: 2px dashed rgba(60, 42, 93, 0.35);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 16px;
+      box-shadow: var(--shadow);
+    }
+    .chart-title {
+      font-family: 'Shadows Into Light', cursive;
+      font-size: 1.3rem;
+      margin-bottom: 12px;
+      color: var(--ink-main);
+      text-align: center;
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    @media (min-width: 768px) {
+      .stats-grid {
+        grid-template-columns: repeat(4, 1fr);
+      }
+    }
+    @media (max-width: 480px) {
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    .stat-card {
+      background: var(--paper-card);
+      border: 2px dashed rgba(60, 42, 93, 0.35);
+      border-radius: 14px;
+      padding: 16px;
+      text-align: center;
+      box-shadow: var(--shadow);
+    }
+    .stat-label {
+      font-size: 0.85rem;
+      opacity: 0.7;
+      margin-bottom: 4px;
+    }
+    .stat-value {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.4rem;
+      font-weight: 700;
+    }
+    .stat-value.income { color: var(--income); }
+    .stat-value.expense { color: var(--expense); }
+    .stat-value.balance { color: #5d47b5; }
+    .charts-row {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    @media (min-width: 768px) {
+      .charts-row {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+    .charts-row .chart-container {
+      margin-bottom: 0;
+    }
+    .bottom-row {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+    @media (min-width: 768px) {
+      .bottom-row {
+        grid-template-columns: 2fr 1fr;
+      }
+    }
+    .bottom-row .chart-container {
+      margin-bottom: 0;
+    }
+    .category-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .category-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px dashed rgba(60, 42, 93, 0.2);
+    }
+    .category-item:last-child {
+      border-bottom: none;
+    }
+    .category-bar {
+      height: 8px;
+      background: var(--expense);
+      border-radius: 4px;
+      margin-top: 6px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Loading Overlay -->
+  <div id="loading-overlay" class="loading-overlay" style="display: none;">
+    <div class="loading-spinner"></div>
+    <span>Loading...</span>
+  </div>
+
+  <header>
+    <h1 class="heading-hand highlight-hand">Summary</h1>
+  </header>
+
+  <main class="summary-page">
+    <div class="top-actions">
+      <a href="index.html" class="btn-hand back-btn"><i class="ri-arrow-left-line"></i> Back</a>
+      <div class="action-btns">
+        <a href="summary-all.html" class="btn-hand all-btn"><i class="ri-database-2-fill"></i> All</a>
+        <button class="btn-hand next-month-btn" id="next-month-btn"><i class="ri-calendar-check-fill"></i> Next Month</button>
+      </div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">Total Income</div>
+        <div class="stat-value income" id="total-income">฿0.00</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Total Expenses</div>
+        <div class="stat-value expense" id="total-expense">฿0.00</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Net Balance</div>
+        <div class="stat-value balance" id="net-balance">฿0.00</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Transactions</div>
+        <div class="stat-value" id="total-count">0</div>
+      </div>
+    </div>
+
+    <div class="charts-row">
+      <div class="chart-container">
+        <div class="chart-title"><i class="ri-bar-chart-fill"></i> Income vs Expenses</div>
+        <canvas id="barChart" height="200"></canvas>
+      </div>
+
+      <div class="chart-container">
+        <div class="chart-title"><i class="ri-pie-chart-fill"></i> Expenses by Category</div>
+        <canvas id="pieChart" height="200"></canvas>
+      </div>
+    </div>
+
+    <div class="bottom-row">
+      <div class="chart-container">
+        <div class="chart-title"><i class="ri-calendar-line"></i> Daily Transactions (This Month)</div>
+        <canvas id="dailyChart" height="180"></canvas>
+      </div>
+
+      <div class="chart-container">
+        <div class="chart-title"><i class="ri-list-check-2"></i> Top Categories</div>
+        <ul class="category-list" id="category-list"></ul>
+      </div>
+    </div>
+  </main>
+
+  <!-- External Libraries -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  
+  <!-- Modular Scripts -->
+  <script src="js/config.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/charts.js"></script>
+  <script src="js/summary-page.js"></script>
+</body>
+</html>

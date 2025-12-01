@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Money Notes</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700&family=Space+Grotesk:wght@500;700&family=Shadows+Into+Light:wght@400&family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Loading Overlay -->
+  <div id="loading-overlay" class="loading-overlay" style="display: none;">
+    <div class="loading-spinner"></div>
+    <span>Loading...</span>
+  </div>
+
+  <header>
+    <h1 class="heading-hand highlight-hand">My Money Notes</h1>
+  </header>
+
+  <main>
+    <section class="summary-area">
+      <!-- Mobile Layout -->
+      <div class="summary-mobile">
+        <div class="summary-row-card balance-row">
+          <span class="row-label"><i class="ri-wallet-3-fill row-icon balance-icon"></i> Net balance (month)</span>
+          <span class="row-amount balance" id="net-balance-mobile">฿0.00</span>
+        </div>
+        <div class="summary-row-card">
+          <div class="row-line">
+            <span class="row-label"><i class="ri-line-chart-fill row-icon income-icon"></i> Income (month)</span>
+            <span class="row-amount income" id="total-income-mobile">฿0.00</span>
+          </div>
+          <div class="row-line">
+            <span class="row-label"><i class="ri-arrow-down-line row-icon expense-icon"></i> Expenses (month)</span>
+            <span class="row-amount expense" id="total-expense-mobile">฿0.00</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Desktop Layout -->
+      <div class="summary-grid">
+        <div class="summary-card balance-card">
+          <div class="card-icon"><i class="ri-wallet-3-fill"></i></div>
+          <span class="card-label">Net Balance</span>
+          <span class="card-amount" id="net-balance">฿0.00</span>
+        </div>
+
+        <div class="summary-card income-card">
+          <div class="card-icon"><i class="ri-line-chart-fill"></i></div>
+          <span class="card-label">Income</span>
+          <span class="card-amount" id="total-income">฿0.00</span>
+        </div>
+
+        <div class="summary-card expense-card">
+          <div class="card-icon"><i class="ri-arrow-down-line"></i></div>
+          <span class="card-label">Expenses</span>
+          <span class="card-amount" id="total-expense">฿0.00</span>
+        </div>
+      </div>
+
+      <div class="btn-group">
+        <button class="btn-hand" id="summary-btn">Summary</button>
+        <button class="btn-hand ghost" id="settings-btn" type="button">Settings</button>
+      </div>
+      <input type="file" id="slip-input" accept="image/*" style="display: none;" />
+      <div class="card-paper">
+        <form id="transaction-form">
+          <div id="form-message" class="notice" style="display: none;"></div>
+          <div class="type-group">
+            <label>Type</label>
+            <div class="radio-group">
+              <label class="radio-label">
+                <input type="radio" name="type" value="income" checked />
+                <span class="radio-text income-text">Income</span>
+              </label>
+              <label class="radio-label">
+                <input type="radio" name="type" value="expense" />
+                <span class="radio-text expense-text">Expense</span>
+              </label>
+            </div>
+          </div>
+
+          <div>
+            <label for="amount">Amount</label>
+            <input type="number" id="amount" min="0.01" step="0.01" placeholder="0.00" required />
+          </div>
+
+          <div>
+            <label for="category">Category</label>
+            <select id="category" required>
+              <option value="">-- Select --</option>
+              <option value="Salary">Salary</option>
+              <option value="Bonus">Bonus</option>
+              <option value="Freelance">Freelance</option>
+              <option value="Other Income">Other Income</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="date">Date</label>
+            <input type="date" id="date" required />
+          </div>
+
+          <div>
+            <label for="time">Time</label>
+            <input type="time" id="time" required />
+          </div>
+
+          <div>
+            <label for="note">Note (optional)</label>
+            <textarea id="note" placeholder="Add a short note..."></textarea>
+          </div>
+
+          <div class="form-actions">
+            <button type="button" class="btn-hand btn-scan" id="scan-btn">Scan slip</button>
+            <button type="submit" class="btn-hand">Save transaction</button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <section class="history-area">
+      <div class="history-header">
+        <h2 class="heading-hand highlight-hand" style="margin: 0;">Transaction History</h2>
+        <button class="btn-hand danger" id="delete-toggle">Delete items</button>
+      </div>
+      <div id="delete-bar" class="delete-bar" style="display: none;">
+        <span id="delete-selected-count">Selected 0 items</span>
+        <div class="delete-bar-actions">
+          <button class="btn-hand ghost" id="delete-cancel">Cancel</button>
+          <button class="btn-hand danger" id="delete-all-btn">Delete all</button>
+          <button class="btn-hand danger" id="delete-confirm">Delete selected</button>
+        </div>
+      </div>
+      <div id="delete-hint" class="delete-hint" style="display: none;">Tap items to mark for deletion</div>
+      <ul id="history-list"></ul>
+      <div id="empty-state" class="empty-state" style="display: none;">No transactions yet. Add your first note!</div>
+    </section>
+  </main>
+  <!-- External Libraries -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  
+  <!-- Modular Scripts -->
+  <script src="js/config.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/ocr.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
