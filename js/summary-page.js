@@ -86,7 +86,7 @@ async function initSummaryPage() {
       
       const confirmed = await showModal({
         title: 'เริ่มเดือนใหม่?',
-        message: '⚠️ ข้อมูลในหน้า Summary จะถูกล้าง\n✅ ข้อมูลในหน้า All Time ยังคงอยู่',
+        message: 'ข้อมูลในหน้า Summary จะถูกล้าง\nข้อมูลในหน้า All Time ยังคงอยู่',
         icon: 'ri-calendar-check-line',
         confirmText: 'รีเซ็ต',
         cancelText: 'ยกเลิก'

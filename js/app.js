@@ -300,8 +300,8 @@ function setupEventListeners() {
     if (transactions.length === 0) return;
     
     const confirmed = await showModal({
-      title: 'ลบทั้งหมด?',
-      message: `ลบรายการทั้งหมด ${transactions.length} รายการ?\n\n⚠️ ข้อมูลใน All Time จะถูกลบด้วย`,
+      title: 'ลบทั้งหมด',
+      message: `ลบรายการทั้งหมด ${transactions.length} รายการ\n`,
       icon: 'ri-delete-bin-line',
       confirmText: 'ลบทั้งหมด',
       cancelText: 'ยกเลิก'
@@ -334,7 +334,7 @@ function setupEventListeners() {
     
     const confirmed = await showModal({
       title: 'เริ่มเดือนใหม่?',
-      message: '⚠️ ข้อมูลในหน้า Summary จะถูกล้าง\n✅ ข้อมูลในหน้า All Time ยังคงอยู่',
+      message: 'ข้อมูลในหน้า Summary จะถูกล้าง\nข้อมูลในหน้า All Time ยังคงอยู่',
       icon: 'ri-calendar-check-line',
       confirmText: 'รีเซ็ต',
       cancelText: 'ยกเลิก'

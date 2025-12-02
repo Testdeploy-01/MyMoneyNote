@@ -162,6 +162,10 @@ h1 {
   display: inline-block;
 }
 
+h2.highlight-hand {
+  padding-top: 12px;
+}
+
 .highlight-hand::before {
   content: '';
   position: absolute;
