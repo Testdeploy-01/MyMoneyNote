@@ -5,31 +5,61 @@
  */
 
 // ============================================
-// Notification System
+// Toast Notification System
 // ============================================
 
-let noticeTimeout = null;
+let toastContainer = null;
 
 /**
- * แสดงข้อความแจ้งเตือน
- * @param {HTMLElement} element - element ที่จะแสดงข้อความ
+ * สร้าง Toast Container (ถ้ายังไม่มี)
+ */
+function getToastContainer() {
+  if (!toastContainer) {
+    toastContainer = document.createElement('div');
+    toastContainer.id = 'toast-container';
+    toastContainer.className = 'toast-container';
+    document.body.appendChild(toastContainer);
+  }
+  return toastContainer;
+}
+
+/**
+ * แสดง Toast Notification
+ * @param {HTMLElement} element - (ไม่ใช้แล้ว แต่เก็บไว้เพื่อ compatibility)
  * @param {string} type - 'success' หรือ 'error'
  * @param {string} message - ข้อความที่จะแสดง
  */
 function showNotice(element, type, message) {
-  if (!element) return;
+  const container = getToastContainer();
   
-  if (noticeTimeout) {
-    clearTimeout(noticeTimeout);
-  }
+  // สร้าง toast element
+  const toast = document.createElement('div');
+  toast.className = `toast toast-${type}`;
   
-  element.textContent = message;
-  element.className = `notice ${type}`;
-  element.style.display = 'flex';
+  // Icon
+  const icon = type === 'success' ? 'ri-check-line' : 'ri-error-warning-line';
   
-  noticeTimeout = setTimeout(() => {
-    element.style.display = 'none';
-  }, 3200);
+  toast.innerHTML = `
+    <i class="${icon} toast-icon"></i>
+    <span class="toast-message">${message}</span>
+  `;
+  
+  container.appendChild(toast);
+  
+  // Trigger animation
+  requestAnimationFrame(() => {
+    toast.classList.add('toast-show');
+  });
+  
+  // Auto remove after 3 seconds
+  setTimeout(() => {
+    toast.classList.remove('toast-show');
+    toast.classList.add('toast-hide');
+    
+    setTimeout(() => {
+      toast.remove();
+    }, 300);
+  }, 3000);
 }
 
 // ============================================
