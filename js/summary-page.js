@@ -74,16 +74,37 @@ async function initSummaryPage() {
     // Next Month Button - รีเซ็ตเฉพาะ Monthly
     document.getElementById('next-month-btn')?.addEventListener('click', async () => {
       if (transactions.length === 0) {
-        alert('ไม่มีรายการที่จะรีเซ็ต');
+        await showModal({
+          title: 'ไม่มีรายการ',
+          message: 'ไม่มีรายการที่จะรีเซ็ต',
+          type: 'alert',
+          icon: 'ri-information-line',
+          confirmText: 'ตกลง'
+        });
         return;
       }
       
-      if (confirm('รีเซ็ตข้อมูลเดือนนี้?\n\n⚠️ ข้อมูลในหน้า Summary จะถูกล้าง\n✅ ข้อมูลในหน้า All Time ยังคงอยู่')) {
+      const confirmed = await showModal({
+        title: 'เริ่มเดือนใหม่?',
+        message: '⚠️ ข้อมูลในหน้า Summary จะถูกล้าง\n✅ ข้อมูลในหน้า All Time ยังคงอยู่',
+        icon: 'ri-calendar-check-line',
+        confirmText: 'รีเซ็ต',
+        cancelText: 'ยกเลิก'
+      });
+      
+      if (confirmed) {
         if (loadingEl) loadingEl.style.display = 'flex';
         
         await resetMonthlyData();
         
-        alert('รีเซ็ตข้อมูลเดือนนี้แล้ว!\n\nข้อมูลเก่ายังดูได้ในหน้า All Time Summary');
+        await showModal({
+          title: 'สำเร็จ!',
+          message: 'รีเซ็ตข้อมูลเดือนนี้แล้ว\n\nข้อมูลเก่ายังดูได้ในหน้า All Time',
+          type: 'alert',
+          icon: 'ri-check-line',
+          confirmText: 'ตกลง'
+        });
+        
         window.location.reload();
       }
     });

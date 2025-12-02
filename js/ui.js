@@ -206,6 +206,84 @@ function renderHistoryList(listEl, emptyEl, transactions, deleteMode = false, se
 }
 
 // ============================================
+// Custom Modal Dialog
+// ============================================
+
+/**
+ * แสดง Modal Dialog แทน confirm/alert
+ * @param {Object} options - { title, message, type, confirmText, cancelText }
+ * @returns {Promise<boolean>} true ถ้ากด confirm
+ */
+function showModal(options) {
+  return new Promise((resolve) => {
+    const {
+      title = 'ยืนยัน',
+      message = '',
+      type = 'confirm', // 'confirm' หรือ 'alert'
+      confirmText = 'ตกลง',
+      cancelText = 'ยกเลิก',
+      icon = 'ri-question-line'
+    } = options;
+
+    // สร้าง overlay
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+
+    // สร้าง modal
+    const modal = document.createElement('div');
+    modal.className = 'modal-dialog';
+    
+    modal.innerHTML = `
+      <div class="modal-icon"><i class="${icon}"></i></div>
+      <h3 class="modal-title">${title}</h3>
+      <p class="modal-message">${message}</p>
+      <div class="modal-actions">
+        ${type === 'confirm' ? `<button class="btn-hand ghost modal-cancel">${cancelText}</button>` : ''}
+        <button class="btn-hand modal-confirm">${confirmText}</button>
+      </div>
+    `;
+
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+
+    // Animation
+    requestAnimationFrame(() => {
+      overlay.classList.add('modal-show');
+    });
+
+    // Close function
+    const closeModal = (result) => {
+      overlay.classList.remove('modal-show');
+      setTimeout(() => {
+        overlay.remove();
+        resolve(result);
+      }, 200);
+    };
+
+    // Event listeners
+    modal.querySelector('.modal-confirm')?.addEventListener('click', () => closeModal(true));
+    modal.querySelector('.modal-cancel')?.addEventListener('click', () => closeModal(false));
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) closeModal(false);
+    });
+  });
+}
+
+/**
+ * Confirm dialog
+ */
+async function showConfirm(title, message, icon = 'ri-question-line') {
+  return showModal({ title, message, type: 'confirm', icon });
+}
+
+/**
+ * Alert dialog
+ */
+async function showAlert(title, message, icon = 'ri-information-line') {
+  return showModal({ title, message, type: 'alert', icon });
+}
+
+// ============================================
 // Category Dropdown
 // ============================================
 

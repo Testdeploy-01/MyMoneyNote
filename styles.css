@@ -930,17 +930,16 @@ textarea {
   color: var(--ink-main);
 }
 
-/* Mobile: Toast at bottom */
+/* Mobile: Toast at top */
 @media (max-width: 600px) {
   .toast-container {
-    top: auto;
-    bottom: 20px;
+    top: 20px;
     left: 20px;
     right: 20px;
   }
   
   .toast {
-    transform: translateY(120%);
+    transform: translateY(-120%);
     max-width: 100%;
   }
   
@@ -949,6 +948,148 @@ textarea {
   }
   
   .toast-hide {
-    transform: translateY(120%);
+    transform: translateY(-120%);
+  }
+}
+
+
+/* ============================================
+   Custom Modal Dialog
+   ============================================ */
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(60, 42, 93, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10001;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  padding: 20px;
+}
+
+.modal-overlay.modal-show {
+  opacity: 1;
+}
+
+.modal-dialog {
+  background: var(--paper-card);
+  border: 3px solid var(--ink-main);
+  border-radius: 20px;
+  padding: 28px 24px;
+  max-width: 360px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 8px 8px 0 rgba(60, 42, 93, 0.25);
+  transform: scale(0.9) translateY(-20px);
+  transition: transform 0.2s ease;
+}
+
+.modal-show .modal-dialog {
+  transform: scale(1) translateY(0);
+}
+
+.modal-icon {
+  width: 60px;
+  height: 60px;
+  margin: 0 auto 16px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
+  color: var(--ink-main);
+}
+
+.modal-title {
+  font-family: 'Shadows Into Light', cursive;
+  font-size: 1.5rem;
+  color: var(--ink-main);
+  margin: 0 0 12px;
+}
+
+.modal-message {
+  font-size: 0.95rem;
+  color: var(--ink-main);
+  opacity: 0.85;
+  margin: 0 0 24px;
+  line-height: 1.5;
+  white-space: pre-line;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.modal-actions .btn-hand {
+  min-width: 100px;
+  padding: 12px 20px;
+}
+
+.modal-confirm {
+  background: var(--income) !important;
+  color: #fff !important;
+}
+
+.modal-overlay.modal-danger .modal-icon {
+  background: linear-gradient(135deg, var(--expense), #ffb3c6);
+}
+
+.modal-overlay.modal-danger .modal-confirm {
+  background: var(--expense) !important;
+}
+
+
+/* Mobile Modal */
+@media (max-width: 600px) {
+  .modal-overlay {
+    padding: 16px;
+    align-items: flex-end;
+  }
+  
+  .modal-dialog {
+    max-width: 100%;
+    border-radius: 20px 20px 0 0;
+    padding: 24px 20px 32px;
+    margin-bottom: 0;
+    box-shadow: 0 -8px 24px rgba(60, 42, 93, 0.25);
+    transform: translateY(100%);
+  }
+  
+  .modal-show .modal-dialog {
+    transform: translateY(0);
+  }
+  
+  .modal-icon {
+    width: 50px;
+    height: 50px;
+    font-size: 1.5rem;
+  }
+  
+  .modal-title {
+    font-size: 1.3rem;
+  }
+  
+  .modal-message {
+    font-size: 0.9rem;
+  }
+  
+  .modal-actions {
+    flex-direction: column-reverse;
+    gap: 10px;
+  }
+  
+  .modal-actions .btn-hand {
+    width: 100%;
+    padding: 14px 20px;
   }
 }
