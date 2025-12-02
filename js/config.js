@@ -24,19 +24,21 @@ const INCOME_CATEGORIES = [
 // หมวดหมู่สำหรับรายจ่าย
 const EXPENSE_CATEGORIES = [
   'Food', 
+, '7-Eleven',
+  'AIS and Premium',
+  'Cigarettes',
+  'Bills', 
   'Transport', 
   'Shopping', 
-  'Bills', 
-  'Entertainment', 
-  'Health', 
   'Other'
 ];
 
 // คำสำคัญสำหรับตรวจจับหมวดหมู่อัตโนมัติจาก slip
 const CATEGORY_KEYWORDS = {
   'Bills': [
-    'เน็ต', 'ค่าเน็ต', 'internet', 'ais', 'true', 'dtac', 
-    'ค่าไฟ', 'ไฟฟ้า', 'ค่าน้ำ', 'ประปา', 'ค่าโทรศัพท์', 'ค่าเช่า'
+    'ค่าบ้าน', 'ค่าบิล', 'ค่าไฟ', 'ค่าน้ำ', 'ค่าโทรศัพท์', 
+    'ค่าเน็ต', 'ค่า.internet', 'ค่าโทรศัพท์', 'ค่าโทรศัพท์', 
+
   ],
   'Food': [
     'อาหาร', 'ข้าว', 'กาแฟ', 'coffee', 'ร้านอาหาร', 
@@ -47,15 +49,13 @@ const CATEGORY_KEYWORDS = {
     'น้ำมัน', 'ปั๊ม', 'ptt', 'ค่ารถ'
   ],
   'Shopping': [
-    'เซเว่น', '7-eleven', 'โลตัส', 'บิ๊กซี', 'makro', 
+    'เซเว่น', 'โลตัส', 'บิ๊กซี', 'makro', 
     'lazada', 'shopee', 'central'
   ],
-  'Entertainment': [
-    'netflix', 'youtube', 'spotify', 'หนัง', 'movie', 'เกม'
+  'AIS and Premium': [
+    'netflix', 'youtube', 'spotify', 'หนัง', 'movie', 'Ai',
+    'เน็ต', 'ค่าเน็ต', 'internet', 'ais', 'true', 'dtac', 
   ],
-  'Health': [
-    'โรงพยาบาล', 'hospital', 'คลินิก', 'ยา', 'pharmacy'
-  ]
 };
 
 // ชื่อเดือนภาษาอังกฤษ
