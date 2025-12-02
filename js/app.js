@@ -166,7 +166,9 @@ function resetForm() {
   updateCategories();
   elements.dateInput.value = getTodayDate();
   elements.timeInput.value = getCurrentTime();
-  elements.amountInput.focus();
+  
+  // Blur เพื่อซ่อน keyboard บนมือถือ
+  document.activeElement?.blur();
 }
 
 async function handleFormSubmit(event) {
