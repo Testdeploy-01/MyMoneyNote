@@ -124,7 +124,8 @@ function createHistoryItem(transaction, deleteMode = false, selectedIds = new Se
   dateSpan.className = 'item-date';
   const displayDate = new Date(transaction.date).toLocaleDateString();
   const dayName = getDayName(transaction.date);
-  const time = transaction.time || '';
+  // แสดงเวลาแค่ HH:MM (ตัด :SS ออก)
+  const time = transaction.time ? transaction.time.slice(0, 5) : '';
   dateSpan.innerHTML = `${displayDate}<br><small>${dayName} ${time}</small>`;
   
   // รายละเอียด
@@ -217,11 +218,11 @@ function renderHistoryList(listEl, emptyEl, transactions, deleteMode = false, se
 function showModal(options) {
   return new Promise((resolve) => {
     const {
-      title = 'ยืนยัน',
+      title = 'Confirm',
       message = '',
-      type = 'confirm', // 'confirm' หรือ 'alert'
-      confirmText = 'ตกลง',
-      cancelText = 'ยกเลิก',
+      type = 'confirm',
+      confirmText = 'OK',
+      cancelText = 'Cancel',
       icon = 'ri-question-line'
     } = options;
 

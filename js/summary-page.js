@@ -22,13 +22,59 @@ async function initSummaryPage() {
     document.getElementById('net-balance').textContent = formatMoney(totals.income - totals.expense);
     document.getElementById('total-count').textContent = transactions.length;
     
-    // สร้างกราฟ
-    createBarChart(
-      document.getElementById('barChart'),
-      totals.income,
-      totals.expense
-    );
+    // แสดงรายจ่ายวันนี้แบ่งตาม Category
+    const today = getTodayDate();
+    const todayExpenses = transactions.filter(t => t.type === 'expense' && t.date === today);
+    const todayByCategory = {};
     
+    todayExpenses.forEach(t => {
+      todayByCategory[t.category] = (todayByCategory[t.category] || 0) + t.amount;
+    });
+    
+    const todayList = document.getElementById('today-expenses-list');
+    const sortedToday = Object.entries(todayByCategory).sort((a, b) => b[1] - a[1]);
+    const maxToday = sortedToday[0]?.[1] || 1;
+    
+    // คำนวณยอดรวมวันนี้
+    const todayTotal = todayExpenses.reduce((sum, t) => sum + t.amount, 0);
+    
+    if (sortedToday.length === 0) {
+      todayList.innerHTML = '<li style="text-align: center; padding: 20px; opacity: 0.6;">No expenses today</li>';
+    } else {
+      // Show total first
+      const totalLi = document.createElement('li');
+      totalLi.className = 'category-item';
+      totalLi.style.borderBottom = '2px solid var(--expense)';
+      totalLi.style.paddingBottom = '12px';
+      totalLi.style.marginBottom = '8px';
+      totalLi.innerHTML = `
+        <div style="flex: 1;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-weight: 700;">Today's Total</span>
+            <span style="color: var(--expense); font-weight: 800; font-size: 1.2rem;">${formatMoney(todayTotal)}</span>
+          </div>
+        </div>
+      `;
+      todayList.appendChild(totalLi);
+      
+      // Show each category
+      sortedToday.forEach(([category, amount]) => {
+        const li = document.createElement('li');
+        li.className = 'category-item';
+        li.innerHTML = `
+          <div style="flex: 1;">
+            <div style="display: flex; justify-content: space-between;">
+              <span>${category}</span>
+              <span style="color: var(--expense); font-weight: 700;">${formatMoney(amount)}</span>
+            </div>
+            <div class="category-bar" style="width: ${(amount / maxToday) * 100}%;"></div>
+          </div>
+        `;
+        todayList.appendChild(li);
+      });
+    }
+    
+    // สร้างกราฟ Pie Chart
     const categoryData = calculateCategoryTotals(transactions);
     createPieChart(
       document.getElementById('pieChart'),
@@ -71,25 +117,25 @@ async function initSummaryPage() {
       categoryList.innerHTML = '<li style="text-align: center; padding: 20px; opacity: 0.6;">No expense data yet</li>';
     }
     
-    // Next Month Button - รีเซ็ตเฉพาะ Monthly
+    // Next Month Button - Reset Monthly only
     document.getElementById('next-month-btn')?.addEventListener('click', async () => {
       if (transactions.length === 0) {
         await showModal({
-          title: 'ไม่มีรายการ',
-          message: 'ไม่มีรายการที่จะรีเซ็ต',
+          title: 'No Transactions',
+          message: 'No transactions to reset.',
           type: 'alert',
           icon: 'ri-information-line',
-          confirmText: 'ตกลง'
+          confirmText: 'OK'
         });
         return;
       }
       
       const confirmed = await showModal({
-        title: 'เริ่มเดือนใหม่?',
-        message: 'ข้อมูลในหน้า Summary จะถูกล้าง\nข้อมูลในหน้า All Time ยังคงอยู่',
+        title: 'Start New Month?',
+        message: 'Summary data will be cleared.\nAll Time data will remain.',
         icon: 'ri-calendar-check-line',
-        confirmText: 'รีเซ็ต',
-        cancelText: 'ยกเลิก'
+        confirmText: 'Reset',
+        cancelText: 'Cancel'
       });
       
       if (confirmed) {
@@ -98,11 +144,11 @@ async function initSummaryPage() {
         await resetMonthlyData();
         
         await showModal({
-          title: 'สำเร็จ!',
-          message: 'รีเซ็ตข้อมูลเดือนนี้แล้ว\n\nข้อมูลเก่ายังดูได้ในหน้า All Time',
+          title: 'Success!',
+          message: 'Monthly data has been reset.\n\nOld data is still available in All Time.',
           type: 'alert',
           icon: 'ri-check-line',
-          confirmText: 'ตกลง'
+          confirmText: 'OK'
         });
         
         window.location.reload();
@@ -113,7 +159,7 @@ async function initSummaryPage() {
     
   } catch (error) {
     console.error('Error loading summary:', error);
-    alert('ไม่สามารถโหลดข้อมูลได้ กรุณาลองใหม่');
+    alert('Could not load data. Please try again.');
   }
   
   if (loadingEl) loadingEl.style.display = 'none';

@@ -300,11 +300,11 @@ function setupEventListeners() {
     if (transactions.length === 0) return;
     
     const confirmed = await showModal({
-      title: 'ลบทั้งหมด',
-      message: `ลบรายการทั้งหมด ${transactions.length} รายการ\n`,
+      title: 'Delete All?',
+      message: `Delete all ${transactions.length} transactions?\n\nData in All Time will also be deleted.`,
       icon: 'ri-delete-bin-line',
-      confirmText: 'ลบทั้งหมด',
-      cancelText: 'ยกเลิก'
+      confirmText: 'Delete All',
+      cancelText: 'Cancel'
     });
     
     if (confirmed) {
@@ -319,25 +319,25 @@ function setupEventListeners() {
     }
   });
   
-  // Next Month - รีเซ็ตเฉพาะข้อมูลเดือนปัจจุบัน (ไม่กระทบ All Time)
+  // Next Month - Reset current month data (doesn't affect All Time)
   elements.nextMonthBtn?.addEventListener('click', async () => {
     if (transactions.length === 0) {
       await showModal({
-        title: 'ไม่มีรายการ',
-        message: 'ไม่มีรายการที่จะรีเซ็ต',
+        title: 'No Transactions',
+        message: 'No transactions to reset.',
         type: 'alert',
         icon: 'ri-information-line',
-        confirmText: 'ตกลง'
+        confirmText: 'OK'
       });
       return;
     }
     
     const confirmed = await showModal({
-      title: 'เริ่มเดือนใหม่?',
-      message: 'ข้อมูลในหน้า Summary จะถูกล้าง\nข้อมูลในหน้า All Time ยังคงอยู่',
+      title: 'Start New Month?',
+      message: 'Summary data will be cleared.\nAll Time data will remain.',
       icon: 'ri-calendar-check-line',
-      confirmText: 'รีเซ็ต',
-      cancelText: 'ยกเลิก'
+      confirmText: 'Reset',
+      cancelText: 'Cancel'
     });
     
     if (confirmed) {
@@ -349,11 +349,11 @@ function setupEventListeners() {
       renderAll();
       
       await showModal({
-        title: 'สำเร็จ!',
-        message: 'รีเซ็ตข้อมูลเดือนนี้แล้ว\n\nข้อมูลเก่ายังดูได้ในหน้า All Time',
+        title: 'Success!',
+        message: 'Monthly data has been reset.\n\nOld data is still available in All Time.',
         type: 'alert',
         icon: 'ri-check-line',
-        confirmText: 'ตกลง'
+        confirmText: 'OK'
       });
     }
   });
