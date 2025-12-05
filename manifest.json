@@ -1,6 +1,6 @@
 {
   "name": "My Money Notes",
-  "short_name": "MoneyNotes",
+  "short_name": "MyMoneyNotes",
   "description": "บันทึกรายรับรายจ่ายส่วนตัว",
   "start_url": "/index.html",
   "display": "standalone",
