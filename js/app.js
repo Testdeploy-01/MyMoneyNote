@@ -16,6 +16,7 @@ let transactions = [];
 let deleteMode = false;
 const pendingDeleteIds = new Set();
 
+
 // ============================================
 // DOM Elements
 // ============================================
@@ -29,18 +30,14 @@ const elements = {
   timeInput: document.getElementById('time'),
   noteInput: document.getElementById('note'),
   formMessage: document.getElementById('form-message'),
-  
+
   netBalanceEl: document.getElementById('net-balance'),
   totalIncomeEl: document.getElementById('total-income'),
   totalExpenseEl: document.getElementById('total-expense'),
-  
-  netBalanceMobileEl: document.getElementById('net-balance-mobile'),
-  totalIncomeMobileEl: document.getElementById('total-income-mobile'),
-  totalExpenseMobileEl: document.getElementById('total-expense-mobile'),
-  
+
   historyList: document.getElementById('history-list'),
   emptyState: document.getElementById('empty-state'),
-  
+
   deleteToggleBtn: document.getElementById('delete-toggle'),
   deleteBar: document.getElementById('delete-bar'),
   deleteHint: document.getElementById('delete-hint'),
@@ -48,13 +45,12 @@ const elements = {
   deleteConfirmBtn: document.getElementById('delete-confirm'),
   deleteCancelBtn: document.getElementById('delete-cancel'),
   deleteAllBtn: document.getElementById('delete-all-btn'),
-  
+
   summaryBtn: document.getElementById('summary-btn'),
   settingsBtn: document.getElementById('settings-btn'),
-  nextMonthBtn: document.getElementById('next-month-btn'),
   scanBtn: document.getElementById('scan-btn'),
   slipInput: document.getElementById('slip-input'),
-  
+
   loadingOverlay: document.getElementById('loading-overlay')
 };
 
@@ -78,36 +74,48 @@ function hideLoading() {
 // Render Functions
 // ============================================
 
+// Pagination settings
+const ITEMS_PER_PAGE = 10;
+let displayedCount = ITEMS_PER_PAGE;
+
 function renderSummary() {
   const totals = calculateTotals(transactions);
-  
+
   updateSummaryDisplay({
     incomeEl: elements.totalIncomeEl,
     expenseEl: elements.totalExpenseEl,
     balanceEl: elements.netBalanceEl
   }, totals);
-  
-  updateSummaryDisplay({
-    incomeEl: elements.totalIncomeMobileEl,
-    expenseEl: elements.totalExpenseMobileEl,
-    balanceEl: elements.netBalanceMobileEl
-  }, totals);
 }
 
 function renderHistory() {
-  renderHistoryList(
+  const result = renderHistoryList(
     elements.historyList,
     elements.emptyState,
     transactions,
     deleteMode,
-    pendingDeleteIds
+    pendingDeleteIds,
+    deleteMode ? 0 : displayedCount // Show all in delete mode
   );
+
+  // Update load more button
+  const loadMoreBtn = document.getElementById('load-more-btn');
+  if (loadMoreBtn && result) {
+    if (result.hasMore && !deleteMode) {
+      loadMoreBtn.style.display = 'block';
+      loadMoreBtn.innerHTML = `<i class="ri-arrow-down-line"></i> More (${result.displayedCount}/${result.totalCount})`;
+    } else {
+      loadMoreBtn.style.display = 'none';
+    }
+  }
+
   updateDeleteControlsUI();
 }
 
 function renderAll() {
   renderSummary();
   renderHistory();
+  renderBudget(transactions);
 }
 
 // ============================================
@@ -116,7 +124,7 @@ function renderAll() {
 
 function updateDeleteControlsUI() {
   const hasItems = transactions.length > 0;
-  
+
   if (elements.deleteToggleBtn) {
     elements.deleteToggleBtn.style.display = deleteMode ? 'none' : 'inline-flex';
     elements.deleteToggleBtn.disabled = !hasItems;
@@ -166,35 +174,35 @@ function resetForm() {
   updateCategories();
   elements.dateInput.value = getTodayDate();
   elements.timeInput.value = getCurrentTime();
-  
+
   // Blur เพื่อซ่อน keyboard บนมือถือ
   document.activeElement?.blur();
 }
 
 async function handleFormSubmit(event) {
   event.preventDefault();
-  
+
   const type = getSelectedType();
   const amount = parseFloat(elements.amountInput.value);
   const category = elements.categoryInput.value.trim();
   const date = elements.dateInput.value || getTodayDate();
   const time = elements.timeInput.value || getCurrentTime();
   const note = elements.noteInput.value.trim();
-  
+
   if (!amount || amount <= 0 || !category) {
     showNotice(elements.formMessage, 'error', 'Please enter amount and category.');
     return;
   }
-  
+
   const newTransaction = {
     id: generateId(),
     type, amount, category, date, time, note
   };
-  
+
   showLoading();
   const saved = await addTransaction(newTransaction);
   hideLoading();
-  
+
   if (saved) {
     transactions.unshift(newTransaction);
     renderAll();
@@ -212,28 +220,28 @@ async function handleFormSubmit(event) {
 async function handleSlipScan(event) {
   const file = event.target.files[0];
   if (!file) return;
-  
+
   elements.scanBtn.disabled = true;
   elements.scanBtn.textContent = 'Scanning...';
-  
+
   try {
     const data = await scanSlip(file, (progress) => {
       elements.scanBtn.textContent = `${progress}%`;
     });
-    
+
     if (data.amount) elements.amountInput.value = data.amount;
     if (data.date) elements.dateInput.value = data.date;
     if (data.time) elements.timeInput.value = data.time;
-    
+
     elements.typeInputs[1].checked = true;
     updateCategories();
-    
+
     if (data.category) elements.categoryInput.value = data.category;
     elements.noteInput.value = data.memo || '';
-    
+
     const msg = data.category ? `Category: ${data.category}` : 'Please choose category';
     showNotice(elements.formMessage, 'success', `Slip processed. ${msg}`);
-    
+
   } catch (error) {
     showNotice(elements.formMessage, 'error', 'Could not read slip.');
     console.error(error);
@@ -253,40 +261,46 @@ function setupEventListeners() {
   elements.typeInputs.forEach(input => {
     input.addEventListener('change', updateCategories);
   });
-  
+
   elements.summaryBtn?.addEventListener('click', () => {
     window.location.href = 'summary.html';
   });
-  
+
   elements.settingsBtn?.addEventListener('click', () => {
     showNotice(elements.formMessage, 'success', 'Settings coming soon');
   });
-  
+
   elements.scanBtn?.addEventListener('click', () => elements.slipInput.click());
   elements.slipInput?.addEventListener('change', handleSlipScan);
-  
+
+  // Load More button
+  document.getElementById('load-more-btn')?.addEventListener('click', () => {
+    displayedCount += ITEMS_PER_PAGE;
+    renderHistory();
+  });
+
   elements.deleteToggleBtn?.addEventListener('click', enterDeleteMode);
   elements.deleteCancelBtn?.addEventListener('click', exitDeleteMode);
-  
+
   elements.deleteConfirmBtn?.addEventListener('click', async () => {
     if (pendingDeleteIds.size === 0) return;
-    
+
     showLoading();
     await deleteTransactions(pendingDeleteIds);
     hideLoading();
-    
+
     const idsToDelete = new Set(pendingDeleteIds);
     transactions = transactions.filter(t => !idsToDelete.has(t.id));
     showNotice(elements.formMessage, 'success', `Deleted ${idsToDelete.size} item(s)`);
     exitDeleteMode();
     renderAll();
   });
-  
+
   elements.historyList?.addEventListener('click', (e) => {
     if (!deleteMode) return;
     const item = e.target.closest('.history-item');
     if (!item) return;
-    
+
     const id = item.dataset.id;
     if (pendingDeleteIds.has(id)) {
       pendingDeleteIds.delete(id);
@@ -295,10 +309,10 @@ function setupEventListeners() {
     }
     renderHistory();
   });
-  
+
   elements.deleteAllBtn?.addEventListener('click', async () => {
     if (transactions.length === 0) return;
-    
+
     const confirmed = await showModal({
       title: 'Delete All?',
       message: `Delete all ${transactions.length} transactions?\n\nData in All Time will also be deleted.`,
@@ -306,57 +320,21 @@ function setupEventListeners() {
       confirmText: 'Delete All',
       cancelText: 'Cancel'
     });
-    
+
     if (confirmed) {
       showLoading();
       await deleteTransactions(transactions.map(t => t.id));
       hideLoading();
-      
+
       transactions = [];
       exitDeleteMode();
       renderAll();
       showNotice(elements.formMessage, 'success', 'All transactions deleted');
     }
   });
-  
-  // Next Month - Reset current month data (doesn't affect All Time)
-  elements.nextMonthBtn?.addEventListener('click', async () => {
-    if (transactions.length === 0) {
-      await showModal({
-        title: 'No Transactions',
-        message: 'No transactions to reset.',
-        type: 'alert',
-        icon: 'ri-information-line',
-        confirmText: 'OK'
-      });
-      return;
-    }
-    
-    const confirmed = await showModal({
-      title: 'Start New Month?',
-      message: 'Summary data will be cleared.\nAll Time data will remain.',
-      icon: 'ri-calendar-check-line',
-      confirmText: 'Reset',
-      cancelText: 'Cancel'
-    });
-    
-    if (confirmed) {
-      showLoading();
-      await resetMonthlyData();
-      hideLoading();
-      
-      transactions = [];
-      renderAll();
-      
-      await showModal({
-        title: 'Success!',
-        message: 'Monthly data has been reset.\n\nOld data is still available in All Time.',
-        type: 'alert',
-        icon: 'ri-check-line',
-        confirmText: 'OK'
-      });
-    }
-  });
+
+  // Setup Budget listeners (will be re-initialized when transactions change)
+  setupBudgetListeners(transactions, renderAll);
 }
 
 // ============================================
@@ -364,24 +342,43 @@ function setupEventListeners() {
 // ============================================
 
 async function init() {
+  // Setup error handlers first
+  setupErrorHandlers();
+  setupOfflineListeners();
+
   elements.dateInput.value = getTodayDate();
   elements.timeInput.value = getCurrentTime();
   updateCategories();
   setupEventListeners();
-  
+
   showLoading();
-  
+
   try {
     transactions = await loadMonthlyTransactions();
     console.log(`Loaded ${transactions.length} monthly transactions`);
+
+    // Load budget from Supabase
+    await initBudgetFromDB(transactions);
+
+    // Sync offline queue if online
+    if (isOnline()) {
+      const queue = getOfflineQueue();
+      if (queue.length > 0) {
+        const result = await syncOfflineQueue();
+        if (result.synced > 0) {
+          // Reload data after sync
+          transactions = await loadMonthlyTransactions();
+        }
+      }
+    }
   } catch (error) {
     console.error('Error loading data:', error);
-    showNotice(elements.formMessage, 'error', 'Could not load data. Please refresh.');
+    handleError(error, 'Loading transactions');
   }
-  
+
   hideLoading();
   renderAll();
-  
+
   console.log('My Money Notes initialized!');
 }
 

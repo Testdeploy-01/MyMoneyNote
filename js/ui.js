@@ -25,37 +25,37 @@ function getToastContainer() {
 
 /**
  * แสดง Toast Notification
- * @param {HTMLElement} element - (ไม่ใช้แล้ว แต่เก็บไว้เพื่อ compatibility)
+ * @param {HTMLElement} _element - (deprecated, kept for compatibility)
  * @param {string} type - 'success' หรือ 'error'
  * @param {string} message - ข้อความที่จะแสดง
  */
-function showNotice(element, type, message) {
+function showNotice(_element, type, message) {
   const container = getToastContainer();
-  
+
   // สร้าง toast element
   const toast = document.createElement('div');
   toast.className = `toast toast-${type}`;
-  
+
   // Icon
   const icon = type === 'success' ? 'ri-check-line' : 'ri-error-warning-line';
-  
+
   toast.innerHTML = `
     <i class="${icon} toast-icon"></i>
     <span class="toast-message">${message}</span>
   `;
-  
+
   container.appendChild(toast);
-  
+
   // Trigger animation
   requestAnimationFrame(() => {
     toast.classList.add('toast-show');
   });
-  
+
   // Auto remove after 3 seconds
   setTimeout(() => {
     toast.classList.remove('toast-show');
     toast.classList.add('toast-hide');
-    
+
     setTimeout(() => {
       toast.remove();
     }, 300);
@@ -93,10 +93,55 @@ function calculateTotals(transactions) {
 function updateSummaryDisplay(elements, totals) {
   const { incomeEl, expenseEl, balanceEl } = elements;
   const netBalance = totals.income - totals.expense;
-  
+
   if (incomeEl) incomeEl.textContent = formatMoney(totals.income);
   if (expenseEl) expenseEl.textContent = formatMoney(totals.expense);
   if (balanceEl) balanceEl.textContent = formatMoney(netBalance);
+
+  // Update Progress Bar elements
+  updateProgressBar(totals);
+}
+
+/**
+ * อัพเดท Progress Bar และ Status
+ * @param {Object} totals - { income, expense }
+ */
+function updateProgressBar(totals) {
+  const income = totals.income || 0;
+  const expense = totals.expense || 0;
+
+  // Calculate spending percentage
+  const spendingPercent = income > 0 ? Math.min((expense / income) * 100, 100) : 0;
+
+  // Update progress bar fill
+  const progressFill = document.getElementById('spending-progress-fill');
+  if (progressFill) {
+    progressFill.style.width = `${spendingPercent}%`;
+  }
+
+  // Update labels
+  const labelLeft = document.querySelector('.progress-label-left');
+  const labelRight = document.getElementById('spending-percent');
+
+  if (labelLeft) {
+    labelLeft.textContent = `${formatMoney(expense)} spent`;
+  }
+
+  if (labelRight) {
+    labelRight.textContent = `${Math.round(spendingPercent)}% of income`;
+  }
+
+  // Update stat card mini bars
+  const incomeBar = document.getElementById('income-bar');
+  const expenseBar = document.getElementById('expense-bar');
+
+  if (incomeBar) {
+    incomeBar.style.width = '100%';
+  }
+
+  if (expenseBar && income > 0) {
+    expenseBar.style.width = `${spendingPercent}%`;
+  }
 }
 
 // ============================================
@@ -114,11 +159,11 @@ function createHistoryItem(transaction, deleteMode = false, selectedIds = new Se
   const li = document.createElement('li');
   li.className = 'history-item';
   li.dataset.id = transaction.id;
-  
+
   if (deleteMode && selectedIds.has(transaction.id)) {
     li.classList.add('selected-delete');
   }
-  
+
   // วันที่
   const dateSpan = document.createElement('span');
   dateSpan.className = 'item-date';
@@ -127,22 +172,22 @@ function createHistoryItem(transaction, deleteMode = false, selectedIds = new Se
   // แสดงเวลาแค่ HH:MM (ตัด :SS ออก)
   const time = transaction.time ? transaction.time.slice(0, 5) : '';
   dateSpan.innerHTML = `${displayDate}<br><small>${dayName} ${time}</small>`;
-  
+
   // รายละเอียด
   const details = document.createElement('div');
   details.className = 'item-main';
-  
+
   const topRow = document.createElement('div');
   topRow.className = 'item-top';
-  
+
   const categoryEl = document.createElement('strong');
   categoryEl.textContent = transaction.category;
   topRow.appendChild(categoryEl);
-  
+
   // Checkbox สำหรับโหมดลบ
   const actions = document.createElement('div');
   actions.className = 'history-actions';
-  
+
   if (deleteMode) {
     const checkbox = document.createElement('input');
     checkbox.type = 'checkbox';
@@ -151,59 +196,70 @@ function createHistoryItem(transaction, deleteMode = false, selectedIds = new Se
     checkbox.checked = selectedIds.has(transaction.id);
     actions.appendChild(checkbox);
   }
-  
+
   topRow.appendChild(actions);
-  
+
   // Note
   const noteDiv = document.createElement('div');
   noteDiv.className = 'item-note';
   noteDiv.textContent = transaction.note || '';
-  
+
   details.appendChild(topRow);
   details.appendChild(noteDiv);
-  
+
   // จำนวนเงิน
   const amountEl = document.createElement('span');
   amountEl.className = `amount ${transaction.type}`;
   const sign = transaction.type === 'income' ? '+' : '-';
   amountEl.textContent = sign + formatMoney(transaction.amount);
-  
+
   li.appendChild(dateSpan);
   li.appendChild(details);
   li.appendChild(amountEl);
-  
+
   return li;
 }
 
 /**
- * Render รายการ transactions
+ * Render รายการ transactions (with pagination support)
  * @param {HTMLElement} listEl - ul element
  * @param {HTMLElement} emptyEl - empty state element
  * @param {Array} transactions - รายการ transactions
  * @param {boolean} deleteMode - อยู่ในโหมดลบหรือไม่
  * @param {Set} selectedIds - IDs ที่ถูกเลือก
+ * @param {number} limit - จำนวนรายการที่แสดง (0 = แสดงทั้งหมด)
  */
-function renderHistoryList(listEl, emptyEl, transactions, deleteMode = false, selectedIds = new Set()) {
+function renderHistoryList(listEl, emptyEl, transactions, deleteMode = false, selectedIds = new Set(), limit = 0) {
   if (!listEl) return;
-  
+
   listEl.innerHTML = '';
-  
+
   if (transactions.length === 0) {
     if (emptyEl) emptyEl.style.display = 'block';
     return;
   }
-  
+
   if (emptyEl) emptyEl.style.display = 'none';
-  
+
   // เรียงจากใหม่ไปเก่า
   const sorted = [...transactions].sort(
     (a, b) => new Date(b.date) - new Date(a.date)
   );
-  
-  sorted.forEach(item => {
+
+  // จำกัดจำนวนหรือแสดงทั้งหมด
+  const itemsToShow = limit > 0 ? sorted.slice(0, limit) : sorted;
+
+  itemsToShow.forEach(item => {
     const li = createHistoryItem(item, deleteMode, selectedIds);
     listEl.appendChild(li);
   });
+
+  // Return info for load more button
+  return {
+    totalCount: sorted.length,
+    displayedCount: itemsToShow.length,
+    hasMore: limit > 0 && sorted.length > limit
+  };
 }
 
 // ============================================
@@ -233,7 +289,7 @@ function showModal(options) {
     // สร้าง modal
     const modal = document.createElement('div');
     modal.className = 'modal-dialog';
-    
+
     modal.innerHTML = `
       <div class="modal-icon"><i class="${icon}"></i></div>
       <h3 class="modal-title">${title}</h3>
@@ -295,9 +351,9 @@ async function showAlert(title, message, icon = 'ri-information-line') {
  */
 function updateCategoryDropdown(selectEl, type) {
   const categories = type === 'income' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
-  
+
   selectEl.innerHTML = '<option value="">-- Select --</option>';
-  
+
   categories.forEach(cat => {
     const option = document.createElement('option');
     option.value = cat;
@@ -305,3 +361,4 @@ function updateCategoryDropdown(selectEl, type) {
     selectEl.appendChild(option);
   });
 }
+

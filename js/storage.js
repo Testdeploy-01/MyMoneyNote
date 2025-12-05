@@ -21,14 +21,21 @@ async function loadMonthlyTransactions() {
 
 /**
  * เพิ่ม transaction ใหม่ (บันทึกทั้ง Monthly และ Archive)
+ * รองรับ offline mode
  */
 async function addTransaction(transaction) {
+  // ถ้า offline ให้เก็บไว้ใน queue
+  if (!isOnline()) {
+    addToOfflineQueue('add', transaction);
+    return transaction; // Return transaction เพื่อให้ UI อัพเดทได้
+  }
+
   // บันทึกไป Monthly
   const monthly = await insertTransactionToDB(transaction);
-  
+
   // บันทึกไป Archive ด้วย (ถาวร)
   await insertToArchive(transaction);
-  
+
   return monthly;
 }
 
@@ -38,25 +45,32 @@ async function addTransaction(transaction) {
 async function deleteTransaction(id) {
   // ลบจาก Monthly
   await deleteTransactionFromDB(id);
-  
+
   // ลบจาก Archive ด้วย
   await deleteFromArchive(id);
-  
+
   return true;
 }
 
 /**
  * ลบหลาย transactions (ลบจากทั้ง Monthly และ Archive)
+ * รองรับ offline mode
  */
 async function deleteTransactions(ids) {
   const idsArray = Array.isArray(ids) ? ids : Array.from(ids);
-  
+
+  // ถ้า offline ให้เก็บไว้ใน queue
+  if (!isOnline()) {
+    addToOfflineQueue('deleteMultiple', { ids: idsArray });
+    return true;
+  }
+
   // ลบจาก Monthly
   await deleteMultipleTransactionsFromDB(idsArray);
-  
+
   // ลบจาก Archive ด้วย
   await deleteMultipleFromArchive(idsArray);
-  
+
   return true;
 }
 
@@ -77,15 +91,6 @@ async function resetMonthlyData() {
  */
 async function loadAllTimeTransactions() {
   return await fetchArchiveTransactionsFromDB();
-}
-
-// ============================================
-// Aliases สำหรับ backward compatibility
-// ============================================
-
-// ใช้ใน app.js
-async function loadCurrentMonthTransactions() {
-  return await loadMonthlyTransactions();
 }
 
 console.log('Storage module loaded (Monthly + Archive)!');

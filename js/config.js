@@ -23,8 +23,8 @@ const INCOME_CATEGORIES = [
 
 // หมวดหมู่สำหรับรายจ่าย
 const EXPENSE_CATEGORIES = [
-  'Food', 
-, '7-Eleven',
+  'Food',
+  '7-Eleven',
   'AIS and Premium',
   'Cigarettes',
   'Bills', 
@@ -37,8 +37,7 @@ const EXPENSE_CATEGORIES = [
 const CATEGORY_KEYWORDS = {
   'Bills': [
     'ค่าบ้าน', 'ค่าบิล', 'ค่าไฟ', 'ค่าน้ำ', 'ค่าโทรศัพท์', 
-    'ค่าเน็ต', 'ค่า.internet', 'ค่าโทรศัพท์', 'ค่าโทรศัพท์', 
-
+    'ค่าเน็ต', 'ค่า.internet'
   ],
   'Food': [
     'อาหาร', 'ข้าว', 'กาแฟ', 'coffee', 'ร้านอาหาร', 
@@ -54,8 +53,8 @@ const CATEGORY_KEYWORDS = {
   ],
   'AIS and Premium': [
     'netflix', 'youtube', 'spotify', 'หนัง', 'movie', 'Ai',
-    'เน็ต', 'ค่าเน็ต', 'internet', 'ais', 'true', 'dtac', 
-  ],
+    'เน็ต', 'ค่าเน็ต', 'internet', 'ais', 'true', 'dtac'
+  ]
 };
 
 // ชื่อเดือนภาษาอังกฤษ

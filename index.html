@@ -1,16 +1,26 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#7b63d7" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="MoneyNotes" />
   <title>My Money Notes</title>
   <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="apple-touch-icon" href="favicon.png">
+  <link rel="manifest" href="manifest.json">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700&family=Space+Grotesk:wght@500;700&family=Shadows+Into+Light:wght@400&family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700&family=Space+Grotesk:wght@500;700&family=Shadows+Into+Light:wght@400&family=Sarabun:wght@400;600;700&display=swap"
+    rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css">
   <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
   <!-- Loading Overlay -->
   <div id="loading-overlay" class="loading-overlay" style="display: none;">
@@ -24,50 +34,123 @@
 
   <main>
     <section class="summary-area">
-      <!-- Mobile Layout -->
-      <div class="summary-mobile">
-        <div class="summary-row-card balance-row">
-          <span class="row-label"><i class="ri-wallet-3-fill row-icon balance-icon"></i> Net balance (month)</span>
-          <span class="row-amount balance" id="net-balance-mobile">฿0.00</span>
-        </div>
-        <div class="summary-row-card">
-          <div class="row-line">
-            <span class="row-label"><i class="ri-line-chart-fill row-icon income-icon"></i> Income (month)</span>
-            <span class="row-amount income" id="total-income-mobile">฿0.00</span>
+      <!-- Desktop Layout - Progress Bar Style -->
+      <div class="summary-progress">
+        <!-- Balance Card - Compact -->
+        <div class="progress-balance-card">
+          <div class="balance-header">
+            <div class="balance-info">
+              <div class="balance-icon"><i class="ri-wallet-3-fill"></i></div>
+              <div class="balance-content">
+                <span class="balance-label">Net Balance</span>
+                <span class="balance-amount" id="net-balance">฿0.00</span>
+              </div>
+            </div>
           </div>
-          <div class="row-line">
-            <span class="row-label"><i class="ri-arrow-down-line row-icon expense-icon"></i> Expenses (month)</span>
-            <span class="row-amount expense" id="total-expense-mobile">฿0.00</span>
+          <div class="spending-progress">
+            <div class="progress-bar">
+              <div class="progress-fill" id="spending-progress-fill" style="width: 0%"></div>
+            </div>
+            <div class="progress-labels">
+              <span class="progress-label-left">฿0 spent</span>
+              <span class="progress-label-right" id="spending-percent">0% of income</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Income & Expense Row -->
+        <div class="progress-stats-row">
+          <div class="progress-stat-card income-stat">
+            <div class="stat-icon"><i class="ri-arrow-up-line"></i></div>
+            <div class="stat-content">
+              <span class="stat-label">Income</span>
+              <span class="stat-amount" id="total-income">฿0.00</span>
+            </div>
+            <div class="stat-bar">
+              <div class="stat-fill income-fill" id="income-bar" style="width: 100%"></div>
+            </div>
+          </div>
+
+          <div class="progress-stat-card expense-stat">
+            <div class="stat-icon"><i class="ri-arrow-down-line"></i></div>
+            <div class="stat-content">
+              <span class="stat-label">Expenses</span>
+              <span class="stat-amount" id="total-expense">฿0.00</span>
+            </div>
+            <div class="stat-bar">
+              <div class="stat-fill expense-fill" id="expense-bar" style="width: 0%"></div>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- Desktop Layout -->
-      <div class="summary-grid">
-        <div class="summary-card balance-card">
-          <div class="card-icon"><i class="ri-wallet-3-fill"></i></div>
-          <span class="card-label">Net Balance</span>
-          <span class="card-amount" id="net-balance">฿0.00</span>
-        </div>
 
-        <div class="summary-card income-card">
-          <div class="card-icon"><i class="ri-line-chart-fill"></i></div>
-          <span class="card-label">Income</span>
-          <span class="card-amount" id="total-income">฿0.00</span>
+      <!-- Budget Tracking Card -->
+      <div class="budget-card" id="budget-card" style="display: none;">
+        <div class="budget-header">
+          <div class="budget-top">
+            <div class="budget-icon"><i class="ri-safe-2-line"></i></div>
+            <div class="budget-content">
+              <span class="budget-label">Available Budget</span>
+              <span class="budget-remaining-main" id="budget-remaining">฿1,000</span>
+            </div>
+          </div>
+          <button class="btn-hand ghost btn-sm" id="budget-settings-btn" aria-label="Budget settings">
+            <i class="ri-settings-4-line"></i>
+          </button>
         </div>
+        <div class="budget-bar">
+          <div class="budget-fill" id="budget-fill" style="width: 0%"></div>
+        </div>
+        <div class="budget-labels">
+          <span id="budget-spent">฿0 spent</span>
+          <span id="budget-total">of ฿1,000</span>
+        </div>
+        <div class="budget-footer">
+          <span class="budget-start" id="budget-start-date">Started: -</span>
+          <button class="btn-hand btn-sm budget-reset" id="budget-reset-btn">
+            <i class="ri-restart-line"></i> New Cycle
+          </button>
+        </div>
+      </div>
 
-        <div class="summary-card expense-card">
-          <div class="card-icon"><i class="ri-arrow-down-line"></i></div>
-          <span class="card-label">Expenses</span>
-          <span class="card-amount" id="total-expense">฿0.00</span>
+      <!-- Budget Setup Card -->
+      <div class="budget-setup" id="budget-setup" style="display: none;">
+        <div class="budget-setup-header">
+          <div class="budget-setup-icon"><i class="ri-safe-2-line"></i></div>
+          <div class="budget-setup-title">
+            <span class="budget-setup-label">Settings</span>
+            <span class="budget-setup-name">Budget</span>
+          </div>
+        </div>
+        <div class="budget-setup-form">
+          <div class="budget-input-group">
+            <label for="budget-amount-input">Amount per cycle</label>
+            <input type="number" id="budget-amount-input" value="1000" min="1" step="100" inputmode="numeric" />
+          </div>
+          <div class="budget-input-group">
+            <label>Cycle duration (days)</label>
+            <div class="budget-days-options" id="budget-days-options">
+              <button type="button" class="budget-day-btn" data-days="3">3</button>
+              <button type="button" class="budget-day-btn" data-days="5">5</button>
+              <button type="button" class="budget-day-btn active" data-days="7">7</button>
+              <input type="number" class="budget-day-input" id="budget-custom-days" placeholder="..." min="1" max="30"
+                inputmode="numeric" />
+            </div>
+          </div>
+        </div>
+        <br>
+        <div class="budget-setup-actions">
+          <button class="btn-hand ghost" id="budget-cancel-btn">Cancel</button>
+          <button class="btn-hand budget-save" id="budget-save-btn">Save</button>
         </div>
       </div>
 
       <div class="btn-group">
-        <button class="btn-hand" id="summary-btn">Summary</button>
-        <button class="btn-hand ghost" id="settings-btn" type="button">Settings</button>
+        <button class="btn-hand" id="summary-btn" aria-label="ดูสรุปรายเดือน">Summary</button>
+        <button class="btn-hand ghost" id="settings-btn" type="button" aria-label="ตั้งค่า">Settings</button>
       </div>
-      <input type="file" id="slip-input" accept="image/*" style="display: none;" />
+      <input type="file" id="slip-input" accept="image/*" style="display: none;" aria-label="เลือกรูปสลิป" />
       <div class="card-paper">
         <form id="transaction-form">
           <div id="form-message" class="notice" style="display: none;"></div>
@@ -87,7 +170,7 @@
 
           <div>
             <label for="amount">Amount</label>
-            <input type="number" id="amount" min="0.01" step="0.01" placeholder="0.00" required />
+            <input type="number" id="amount" min="0.01" step="0.01" placeholder="0.00" inputmode="decimal" required />
           </div>
 
           <div>
@@ -117,8 +200,9 @@
           </div>
 
           <div class="form-actions">
-            <button type="button" class="btn-hand btn-scan" id="scan-btn">Scan slip</button>
-            <button type="submit" class="btn-hand">Save transaction</button>
+            <button type="button" class="btn-hand btn-scan" id="scan-btn" aria-label="สแกนสลิปโอนเงิน">Scan
+              slip</button>
+            <button type="submit" class="btn-hand" aria-label="บันทึกรายการ">Save transaction</button>
           </div>
         </form>
       </div>
@@ -127,32 +211,51 @@
     <section class="history-area">
       <div class="history-header">
         <h2 class="heading-hand highlight-hand" style="margin: 0;">Transaction History</h2>
-        <button class="btn-hand danger" id="delete-toggle">Delete items</button>
+        <button class="btn-hand danger" id="delete-toggle" aria-label="เลือกลบรายการ">Delete items</button>
       </div>
       <div id="delete-bar" class="delete-bar" style="display: none;">
         <span id="delete-selected-count">Selected 0 items</span>
         <div class="delete-bar-actions">
-          <button class="btn-hand ghost" id="delete-cancel">Cancel</button>
-          <button class="btn-hand danger" id="delete-all-btn">Delete all</button>
-          <button class="btn-hand danger" id="delete-confirm">Delete selected</button>
+          <button class="btn-hand ghost" id="delete-cancel" aria-label="ยกเลิก">Cancel</button>
+          <button class="btn-hand danger" id="delete-all-btn" aria-label="ลบทั้งหมด">Delete all</button>
+          <button class="btn-hand danger" id="delete-confirm" aria-label="ลบที่เลือก">Delete selected</button>
         </div>
       </div>
       <div id="delete-hint" class="delete-hint" style="display: none;">Tap items to mark for deletion</div>
       <ul id="history-list"></ul>
+      <button class="btn-hand ghost load-more-btn" id="load-more-btn" style="display: none;"
+        aria-label="โหลดรายการเพิ่มเติม">
+        <i class="ri-arrow-down-line"></i> More
+      </button>
       <div id="empty-state" class="empty-state" style="display: none;">No transactions yet. Add your first note!</div>
     </section>
   </main>
-  <!-- External Libraries -->
-  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  
-  <!-- Modular Scripts -->
-  <script src="js/config.js"></script>
-  <script src="js/utils.js"></script>
-  <script src="js/supabase.js"></script>
-  <script src="js/storage.js"></script>
-  <script src="js/ui.js"></script>
-  <script src="js/ocr.js"></script>
-  <script src="js/app.js"></script>
+
+
+  <!-- External Libraries (defer for performance) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js" defer></script>
+
+  <!-- Modular Scripts (defer for performance) -->
+  <script src="js/config.js" defer></script>
+  <script src="js/utils.js" defer></script>
+  <script src="js/error-handler.js" defer></script>
+  <script src="js/supabase.js" defer></script>
+  <script src="js/offline.js" defer></script>
+  <script src="js/storage.js" defer></script>
+  <script src="js/ui.js" defer></script>
+  <script src="js/ocr.js" defer></script>
+  <script src="js/budget.js" defer></script>
+  <script src="js/app.js" defer></script>
+
+  <!-- PWA Service Worker -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js')
+        .then(() => console.log('SW registered'))
+        .catch((err) => console.log('SW failed:', err));
+    }
+  </script>
 </body>
+
 </html>
