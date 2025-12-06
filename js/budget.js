@@ -21,7 +21,7 @@ let cachedBudget = null;
 function loadBudget() {
   // Return cached budget if available
   if (cachedBudget) return cachedBudget;
-  
+
   // Try localStorage as fallback/cache
   try {
     const data = localStorage.getItem(BUDGET_KEY);
@@ -67,7 +67,7 @@ async function saveBudget(budget) {
     // Save to localStorage first (for immediate UI update)
     localStorage.setItem(BUDGET_KEY, JSON.stringify(budget));
     cachedBudget = budget;
-    
+
     // Save to Supabase
     await saveBudgetToDB(budget);
     return true;
@@ -99,15 +99,15 @@ const BUDGET_CATEGORIES = ['Food', '7-Eleven'];
  */
 function calculateBudgetSpent(transactions, budget) {
   if (!budget || !budget.startDate) return 0;
-  
+
   const cycleStart = new Date(budget.startDate);
-  
+
   return transactions
     .filter(t => {
       if (t.type !== 'expense') return false;
       // Only count Food and 7-Eleven
       if (!BUDGET_CATEGORIES.includes(t.category)) return false;
-      
+
       // Use transaction date + time to compare
       const txDateTime = new Date(`${t.date}T${t.time || '00:00'}`);
       return txDateTime >= cycleStart;
@@ -153,33 +153,38 @@ function initBudgetElements() {
  */
 function showBudgetCard(budget, spent) {
   if (!budgetElements.card) return;
-  
+
   const remaining = budget.amount - spent;
   const percent = Math.min((spent / budget.amount) * 100, 100);
   const cycleDays = budget.cycleDays || 5;
-  
+
   // Update values - remaining is the main display now (can be negative)
-  const remainingText = remaining < 0 
-    ? `-${formatMoney(Math.abs(remaining))}` 
+  const remainingText = remaining < 0
+    ? `-${formatMoney(Math.abs(remaining))}`
     : formatMoney(remaining);
   budgetElements.remaining.textContent = remainingText;
   budgetElements.spent.textContent = `${formatMoney(spent)} spent`;
   budgetElements.total.textContent = `of ${formatMoney(budget.amount)}`;
-  
+
   // Add/remove overspent class for styling
   budgetElements.remaining.classList.toggle('overspent', remaining < 0);
-  
-  // Update progress bar
-  budgetElements.fill.style.width = `${percent}%`;
-  
+
+  // Animate progress bar from 0 to target
+  budgetElements.fill.style.width = '0%';
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      budgetElements.fill.style.width = `${percent}%`;
+    });
+  });
+
   // Update start date with cycle info
   const startDate = new Date(budget.startDate);
   const endDate = new Date(startDate);
   endDate.setDate(endDate.getDate() + cycleDays);
-  
+
   const daysDiff = Math.floor((new Date() - startDate) / (1000 * 60 * 60 * 24));
   const daysLeft = Math.max(cycleDays - daysDiff, 0);
-  
+
   // Format dates: "5 Dec 15:30"
   const formatDateTime = (date) => {
     const day = date.getDate();
@@ -187,19 +192,19 @@ function showBudgetCard(budget, spent) {
     const time = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
     return `${day} ${month} ${time}`;
   };
-  
+
   const startStr = formatDateTime(startDate);
   const endStr = formatDateTime(endDate);
-  
+
   let statusText;
   if (daysLeft > 0) {
     statusText = `${daysLeft} day${daysLeft > 1 ? 's' : ''} left`;
   } else {
     statusText = 'Cycle ended';
   }
-  
+
   budgetElements.startDate.textContent = `${startStr} → ${endStr} · ${statusText}`;
-  
+
   // Show card, hide setup
   budgetElements.card.style.display = 'block';
   budgetElements.setup.style.display = 'none';
@@ -210,13 +215,13 @@ function showBudgetCard(budget, spent) {
  */
 function showBudgetSetup(defaultAmount = 1000, defaultDays = 5) {
   if (!budgetElements.setup) return;
-  
+
   budgetElements.amountInput.value = defaultAmount;
   selectedCycleDays = defaultDays;
-  
+
   // Update active button
   updateDaysButtons(defaultDays);
-  
+
   budgetElements.setup.style.display = 'block';
   budgetElements.card.style.display = 'none';
 }
@@ -228,14 +233,14 @@ function updateDaysButtons(days) {
   const buttons = document.querySelectorAll('.budget-day-btn');
   const customInput = document.getElementById('budget-custom-days');
   const presetDays = [3, 5, 7];
-  
+
   // Clear all active states
   buttons.forEach(btn => btn.classList.remove('active'));
   if (customInput) {
     customInput.classList.remove('active');
     customInput.value = '';
   }
-  
+
   // Check if it's a preset value
   if (presetDays.includes(days)) {
     buttons.forEach(btn => {
@@ -257,15 +262,15 @@ function updateDaysButtons(days) {
  */
 function renderBudget(transactions) {
   initBudgetElements();
-  
+
   const budget = loadBudget();
-  
+
   if (!budget) {
     // Not configured yet - show setup form
     showBudgetSetup();
     return;
   }
-  
+
   const spent = calculateBudgetSpent(transactions, budget);
   showBudgetCard(budget, spent);
 }
@@ -285,10 +290,12 @@ async function initBudgetFromDB(transactions) {
 
 /**
  * Setup Budget Event Listeners
+ * @param {Function} getTransactions - Function that returns current transactions array
+ * @param {Function} onUpdate - Callback when budget is updated
  */
-function setupBudgetListeners(transactions, onUpdate) {
+function setupBudgetListeners(getTransactions, onUpdate) {
   initBudgetElements();
-  
+
   // Days selection buttons
   document.querySelectorAll('.budget-day-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -296,7 +303,7 @@ function setupBudgetListeners(transactions, onUpdate) {
       updateDaysButtons(selectedCycleDays);
     });
   });
-  
+
   // Custom days input
   const customDaysInput = document.getElementById('budget-custom-days');
   if (customDaysInput) {
@@ -305,7 +312,7 @@ function setupBudgetListeners(transactions, onUpdate) {
       document.querySelectorAll('.budget-day-btn').forEach(btn => btn.classList.remove('active'));
       customDaysInput.classList.add('active');
     });
-    
+
     customDaysInput.addEventListener('input', () => {
       const value = parseInt(customDaysInput.value);
       if (value && value > 0) {
@@ -315,30 +322,30 @@ function setupBudgetListeners(transactions, onUpdate) {
       }
     });
   }
-  
+
   // Settings button - show setup
   document.getElementById('budget-settings-btn')?.addEventListener('click', () => {
     const budget = loadBudget();
     showBudgetSetup(budget?.amount || 1000, budget?.cycleDays || 5);
   });
-  
-  // Cancel button
+
+  // Cancel button - use getTransactions() to get latest data
   document.getElementById('budget-cancel-btn')?.addEventListener('click', () => {
     const budget = loadBudget();
     if (budget) {
-      const spent = calculateBudgetSpent(transactions, budget);
+      const spent = calculateBudgetSpent(getTransactions(), budget);
       showBudgetCard(budget, spent);
     }
   });
-  
-  // Save button
+
+  // Save button - use getTransactions() to get latest data
   document.getElementById('budget-save-btn')?.addEventListener('click', () => {
     const amount = parseFloat(budgetElements.amountInput.value);
     if (!amount || amount <= 0) {
       showNotice(null, 'error', 'Please enter a valid amount');
       return;
     }
-    
+
     let budget = loadBudget();
     if (budget) {
       // Update amount and days, keep cycle
@@ -348,20 +355,20 @@ function setupBudgetListeners(transactions, onUpdate) {
       // Create new budget
       budget = createBudget(amount, selectedCycleDays);
     }
-    
+
     saveBudget(budget);
-    const spent = calculateBudgetSpent(transactions, budget);
+    const spent = calculateBudgetSpent(getTransactions(), budget);
     showBudgetCard(budget, spent);
     showNotice(null, 'success', 'Budget saved');
-    
+
     if (onUpdate) onUpdate();
   });
-  
+
   // Reset button - start new cycle
   document.getElementById('budget-reset-btn')?.addEventListener('click', async () => {
     const budget = loadBudget();
     if (!budget) return;
-    
+
     const cycleDays = budget.cycleDays || 5;
     const confirmed = await showModal({
       title: 'Start New Cycle?',
@@ -370,13 +377,13 @@ function setupBudgetListeners(transactions, onUpdate) {
       confirmText: 'New Cycle',
       cancelText: 'Cancel'
     });
-    
+
     if (confirmed) {
       const newBudget = createBudget(budget.amount, cycleDays);
       saveBudget(newBudget);
       showBudgetCard(newBudget, 0);
       showNotice(null, 'success', 'New cycle started!');
-      
+
       if (onUpdate) onUpdate();
     }
   });

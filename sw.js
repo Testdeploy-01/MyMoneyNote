@@ -1,11 +1,10 @@
-const CACHE_NAME = 'money-notes-v2';
+const CACHE_NAME = 'money-notes-v3';
 const ASSETS = [
   '/',
   '/index.html',
   '/summary.html',
   '/summary-all.html',
   '/styles.css',
-  '/favicon.png',
   '/js/config.js',
   '/js/utils.js',
   '/js/error-handler.js',
@@ -17,7 +16,8 @@ const ASSETS = [
   '/js/charts.js',
   '/js/app.js',
   '/js/summary-page.js',
-  '/js/summary-all-page.js'
+  '/js/summary-all-page.js',
+  '/js/budget.js'
 ];
 
 // Install - cache assets

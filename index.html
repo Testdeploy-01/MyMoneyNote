@@ -24,7 +24,9 @@
 <body>
   <!-- Loading Overlay -->
   <div id="loading-overlay" class="loading-overlay" style="display: none;">
-    <div class="loading-spinner"></div>
+    <div class="loader">
+      <i class="ri-money-dollar-circle-fill"></i>
+    </div>
     <span>Loading...</span>
   </div>
 
@@ -211,17 +213,8 @@
     <section class="history-area">
       <div class="history-header">
         <h2 class="heading-hand highlight-hand" style="margin: 0;">Transaction History</h2>
-        <button class="btn-hand danger" id="delete-toggle" aria-label="เลือกลบรายการ">Delete items</button>
+        <span class="swipe-hint"><i class="ri-arrow-left-line"></i> Swipe to delete</span>
       </div>
-      <div id="delete-bar" class="delete-bar" style="display: none;">
-        <span id="delete-selected-count">Selected 0 items</span>
-        <div class="delete-bar-actions">
-          <button class="btn-hand ghost" id="delete-cancel" aria-label="ยกเลิก">Cancel</button>
-          <button class="btn-hand danger" id="delete-all-btn" aria-label="ลบทั้งหมด">Delete all</button>
-          <button class="btn-hand danger" id="delete-confirm" aria-label="ลบที่เลือก">Delete selected</button>
-        </div>
-      </div>
-      <div id="delete-hint" class="delete-hint" style="display: none;">Tap items to mark for deletion</div>
       <ul id="history-list"></ul>
       <button class="btn-hand ghost load-more-btn" id="load-more-btn" style="display: none;"
         aria-label="โหลดรายการเพิ่มเติม">
@@ -234,7 +227,7 @@
 
   <!-- External Libraries (defer for performance) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
-  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js" defer></script>
+  <!-- Tesseract.js is loaded dynamically in ocr.js when user clicks Scan -->
 
   <!-- Modular Scripts (defer for performance) -->
   <script src="js/config.js" defer></script>

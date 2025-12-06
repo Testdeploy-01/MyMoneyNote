@@ -2,7 +2,34 @@
  * ============================================
  * OCR - Scan Slip ด้วย Tesseract.js
  * ============================================
+ * Tesseract.js is loaded dynamically on first use to improve initial load time
  */
+
+// Track if Tesseract is loaded
+let tesseractLoaded = false;
+let tesseractLoadPromise = null;
+
+/**
+ * Load Tesseract.js dynamically (saves ~2-3MB on initial page load)
+ */
+async function loadTesseract() {
+  if (tesseractLoaded) return;
+  if (tesseractLoadPromise) return tesseractLoadPromise;
+
+  tesseractLoadPromise = new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+    script.onload = () => {
+      tesseractLoaded = true;
+      console.log('Tesseract.js loaded dynamically');
+      resolve();
+    };
+    script.onerror = () => reject(new Error('Failed to load Tesseract.js'));
+    document.head.appendChild(script);
+  });
+
+  return tesseractLoadPromise;
+}
 
 // Thai month names mapping
 const THAI_MONTHS = {
@@ -35,7 +62,7 @@ function extractAmount(text) {
     /฿\s*([\d,]+\.?\d*)/i,
     /([\d]{1,3}(?:,\d{3})*(?:\.\d{2}))/
   ];
-  
+
   for (const pattern of patterns) {
     const match = text.match(pattern);
     if (match) {
@@ -58,7 +85,7 @@ function extractDate(text) {
   const thaiDateMatch = text.match(
     /(\d{1,2})\s*(ม\.?ค\.?|ก\.?พ\.?|มี\.?ค\.?|เม\.?ย\.?|พ\.?ค\.?|มิ\.?ย\.?|ก\.?ค\.?|ส\.?ค\.?|ก\.?ย\.?|ต\.?ค\.?|พ\.?ย\.?|ธ\.?ค\.?|มกราคม|กุมภาพันธ์|มีนาคม|เมษายน|พฤษภาคม|มิถุนายน|กรกฎาคม|สิงหาคม|กันยายน|ตุลาคม|พฤศจิกายน|ธันวาคม)\s*(\d{2,4})/i
   );
-  
+
   if (thaiDateMatch) {
     let [, day, monthThai, year] = thaiDateMatch;
     const month = THAI_MONTHS[monthThai] || THAI_MONTHS[monthThai.replace(/\./g, '')] || '01';
@@ -66,7 +93,7 @@ function extractDate(text) {
     if (parseInt(year) > 2500) year = parseInt(year) - 543;
     return `${year}-${month}-${day.padStart(2, '0')}`;
   }
-  
+
   return null;
 }
 
@@ -81,7 +108,7 @@ function extractTime(text) {
     /(\d{1,2})\.(\d{2})\s*(?:น\.?)/,
     /เวลา\s*:?\s*(\d{1,2})[:\.](\d{2})/i
   ];
-  
+
   for (const pattern of patterns) {
     const match = text.match(pattern);
     if (match) {
@@ -107,7 +134,7 @@ function extractMemo(text) {
     /หมายเหตุ\s*:?\s*(.+?)(?:\n|$)/i,
     /memo\s*:?\s*(.+?)(?:\n|$)/i
   ];
-  
+
   for (const pattern of patterns) {
     const match = text.match(pattern);
     if (match && match[1].trim()) {
@@ -127,13 +154,13 @@ function extractMemo(text) {
  */
 function parseSlipData(text) {
   console.log('OCR Text:', text);
-  
+
   const amount = extractAmount(text);
   const date = extractDate(text);
   const time = extractTime(text);
   const memo = extractMemo(text);
   const category = memo ? detectCategoryFromText(memo) : null;
-  
+
   return { amount, date, time, memo, category };
 }
 
@@ -144,6 +171,12 @@ function parseSlipData(text) {
  * @returns {Promise<Object>} ข้อมูลที่ดึงได้
  */
 async function scanSlip(file, onProgress) {
+  // Load Tesseract.js dynamically on first use
+  if (!tesseractLoaded) {
+    if (onProgress) onProgress('Loading...');
+    await loadTesseract();
+  }
+
   const result = await Tesseract.recognize(file, 'tha+eng', {
     logger: (m) => {
       if (m.status === 'recognizing text' && onProgress) {
@@ -151,6 +184,6 @@ async function scanSlip(file, onProgress) {
       }
     }
   });
-  
+
   return parseSlipData(result.data.text);
 }

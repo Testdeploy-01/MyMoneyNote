@@ -149,27 +149,29 @@ function updateProgressBar(totals) {
 // ============================================
 
 /**
- * สร้าง HTML element สำหรับ transaction item
+ * สร้าง HTML element สำหรับ transaction item (with swipe to delete)
  * @param {Object} transaction - ข้อมูล transaction
- * @param {boolean} deleteMode - อยู่ในโหมดลบหรือไม่
- * @param {Set} selectedIds - IDs ที่ถูกเลือก
  * @returns {HTMLElement} li element
  */
-function createHistoryItem(transaction, deleteMode = false, selectedIds = new Set()) {
+function createHistoryItem(transaction) {
   const li = document.createElement('li');
-  li.className = 'history-item';
+  li.className = 'history-item-wrapper';
   li.dataset.id = transaction.id;
 
-  if (deleteMode && selectedIds.has(transaction.id)) {
-    li.classList.add('selected-delete');
-  }
+  // Delete button (hidden behind)
+  const deleteBtn = document.createElement('div');
+  deleteBtn.className = 'swipe-delete-btn';
+  deleteBtn.innerHTML = '<i class="ri-delete-bin-line"></i>';
+
+  // Main content (swipeable)
+  const content = document.createElement('div');
+  content.className = 'history-item';
 
   // วันที่
   const dateSpan = document.createElement('span');
   dateSpan.className = 'item-date';
   const displayDate = new Date(transaction.date).toLocaleDateString();
   const dayName = getDayName(transaction.date);
-  // แสดงเวลาแค่ HH:MM (ตัด :SS ออก)
   const time = transaction.time ? transaction.time.slice(0, 5) : '';
   dateSpan.innerHTML = `${displayDate}<br><small>${dayName} ${time}</small>`;
 
@@ -184,28 +186,15 @@ function createHistoryItem(transaction, deleteMode = false, selectedIds = new Se
   categoryEl.textContent = transaction.category;
   topRow.appendChild(categoryEl);
 
-  // Checkbox สำหรับโหมดลบ
-  const actions = document.createElement('div');
-  actions.className = 'history-actions';
-
-  if (deleteMode) {
-    const checkbox = document.createElement('input');
-    checkbox.type = 'checkbox';
-    checkbox.className = 'delete-select';
-    checkbox.dataset.id = transaction.id;
-    checkbox.checked = selectedIds.has(transaction.id);
-    actions.appendChild(checkbox);
-  }
-
-  topRow.appendChild(actions);
+  details.appendChild(topRow);
 
   // Note
-  const noteDiv = document.createElement('div');
-  noteDiv.className = 'item-note';
-  noteDiv.textContent = transaction.note || '';
-
-  details.appendChild(topRow);
-  details.appendChild(noteDiv);
+  if (transaction.note) {
+    const noteDiv = document.createElement('div');
+    noteDiv.className = 'item-note';
+    noteDiv.textContent = transaction.note;
+    details.appendChild(noteDiv);
+  }
 
   // จำนวนเงิน
   const amountEl = document.createElement('span');
@@ -213,11 +202,82 @@ function createHistoryItem(transaction, deleteMode = false, selectedIds = new Se
   const sign = transaction.type === 'income' ? '+' : '-';
   amountEl.textContent = sign + formatMoney(transaction.amount);
 
-  li.appendChild(dateSpan);
-  li.appendChild(details);
-  li.appendChild(amountEl);
+  content.appendChild(dateSpan);
+  content.appendChild(details);
+  content.appendChild(amountEl);
+
+  li.appendChild(deleteBtn);
+  li.appendChild(content);
+
+  // Setup swipe
+  setupSwipeToDelete(li, content);
 
   return li;
+}
+
+/**
+ * Setup swipe to delete gesture
+ */
+function setupSwipeToDelete(wrapper, content) {
+  let startX = 0;
+  let currentX = 0;
+  let isDragging = false;
+  const threshold = 80; // pixels to trigger delete state
+
+  const onStart = (e) => {
+    const touch = e.touches ? e.touches[0] : e;
+    startX = touch.clientX;
+    isDragging = true;
+    content.style.transition = 'none';
+  };
+
+  const onMove = (e) => {
+    if (!isDragging) return;
+    const touch = e.touches ? e.touches[0] : e;
+    currentX = touch.clientX - startX;
+    
+    // Only allow swipe left (negative)
+    if (currentX < 0) {
+      const translateX = Math.max(currentX, -100);
+      content.style.transform = `translateX(${translateX}px)`;
+    }
+  };
+
+  const onEnd = () => {
+    if (!isDragging) return;
+    isDragging = false;
+    content.style.transition = 'transform 0.3s ease';
+
+    if (currentX < -threshold) {
+      // Show delete button
+      content.style.transform = 'translateX(-80px)';
+      wrapper.classList.add('swiped');
+    } else {
+      // Reset
+      content.style.transform = 'translateX(0)';
+      wrapper.classList.remove('swiped');
+    }
+    currentX = 0;
+  };
+
+  // Touch events
+  content.addEventListener('touchstart', onStart, { passive: true });
+  content.addEventListener('touchmove', onMove, { passive: true });
+  content.addEventListener('touchend', onEnd);
+
+  // Mouse events (for desktop testing)
+  content.addEventListener('mousedown', onStart);
+  document.addEventListener('mousemove', onMove);
+  document.addEventListener('mouseup', onEnd);
+
+  // Click anywhere else to reset
+  document.addEventListener('click', (e) => {
+    if (!wrapper.contains(e.target) && wrapper.classList.contains('swiped')) {
+      content.style.transition = 'transform 0.3s ease';
+      content.style.transform = 'translateX(0)';
+      wrapper.classList.remove('swiped');
+    }
+  });
 }
 
 /**
@@ -225,18 +285,17 @@ function createHistoryItem(transaction, deleteMode = false, selectedIds = new Se
  * @param {HTMLElement} listEl - ul element
  * @param {HTMLElement} emptyEl - empty state element
  * @param {Array} transactions - รายการ transactions
- * @param {boolean} deleteMode - อยู่ในโหมดลบหรือไม่
- * @param {Set} selectedIds - IDs ที่ถูกเลือก
  * @param {number} limit - จำนวนรายการที่แสดง (0 = แสดงทั้งหมด)
+ * @param {Function} onDelete - callback เมื่อกดลบ
  */
-function renderHistoryList(listEl, emptyEl, transactions, deleteMode = false, selectedIds = new Set(), limit = 0) {
+function renderHistoryList(listEl, emptyEl, transactions, limit = 0, onDelete = null) {
   if (!listEl) return;
 
   listEl.innerHTML = '';
 
   if (transactions.length === 0) {
     if (emptyEl) emptyEl.style.display = 'block';
-    return;
+    return { totalCount: 0, displayedCount: 0, hasMore: false };
   }
 
   if (emptyEl) emptyEl.style.display = 'none';
@@ -250,7 +309,14 @@ function renderHistoryList(listEl, emptyEl, transactions, deleteMode = false, se
   const itemsToShow = limit > 0 ? sorted.slice(0, limit) : sorted;
 
   itemsToShow.forEach(item => {
-    const li = createHistoryItem(item, deleteMode, selectedIds);
+    const li = createHistoryItem(item);
+    
+    // Delete button click handler
+    const deleteBtn = li.querySelector('.swipe-delete-btn');
+    if (deleteBtn && onDelete) {
+      deleteBtn.addEventListener('click', () => onDelete(item.id));
+    }
+    
     listEl.appendChild(li);
   });
 

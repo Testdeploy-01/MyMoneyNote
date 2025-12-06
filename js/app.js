@@ -13,8 +13,6 @@
 // ============================================
 
 let transactions = [];
-let deleteMode = false;
-const pendingDeleteIds = new Set();
 
 
 // ============================================
@@ -37,14 +35,6 @@ const elements = {
 
   historyList: document.getElementById('history-list'),
   emptyState: document.getElementById('empty-state'),
-
-  deleteToggleBtn: document.getElementById('delete-toggle'),
-  deleteBar: document.getElementById('delete-bar'),
-  deleteHint: document.getElementById('delete-hint'),
-  deleteSelectedCount: document.getElementById('delete-selected-count'),
-  deleteConfirmBtn: document.getElementById('delete-confirm'),
-  deleteCancelBtn: document.getElementById('delete-cancel'),
-  deleteAllBtn: document.getElementById('delete-all-btn'),
 
   summaryBtn: document.getElementById('summary-btn'),
   settingsBtn: document.getElementById('settings-btn'),
@@ -93,23 +83,20 @@ function renderHistory() {
     elements.historyList,
     elements.emptyState,
     transactions,
-    deleteMode,
-    pendingDeleteIds,
-    deleteMode ? 0 : displayedCount // Show all in delete mode
+    displayedCount,
+    handleDeleteItem // callback for swipe delete
   );
 
   // Update load more button
   const loadMoreBtn = document.getElementById('load-more-btn');
   if (loadMoreBtn && result) {
-    if (result.hasMore && !deleteMode) {
+    if (result.hasMore) {
       loadMoreBtn.style.display = 'block';
       loadMoreBtn.innerHTML = `<i class="ri-arrow-down-line"></i> More (${result.displayedCount}/${result.totalCount})`;
     } else {
       loadMoreBtn.style.display = 'none';
     }
   }
-
-  updateDeleteControlsUI();
 }
 
 function renderAll() {
@@ -119,40 +106,33 @@ function renderAll() {
 }
 
 // ============================================
-// Delete Mode Functions
+// Delete Functions (Swipe to Delete)
 // ============================================
 
-function updateDeleteControlsUI() {
-  const hasItems = transactions.length > 0;
+async function handleDeleteItem(id) {
+  const transaction = transactions.find(t => t.id === id);
+  if (!transaction) return;
 
-  if (elements.deleteToggleBtn) {
-    elements.deleteToggleBtn.style.display = deleteMode ? 'none' : 'inline-flex';
-    elements.deleteToggleBtn.disabled = !hasItems;
-  }
-  if (elements.deleteBar) {
-    elements.deleteBar.style.display = deleteMode ? 'flex' : 'none';
-  }
-  if (elements.deleteHint) {
-    elements.deleteHint.style.display = deleteMode ? 'block' : 'none';
-  }
-  if (elements.deleteConfirmBtn) {
-    elements.deleteConfirmBtn.disabled = pendingDeleteIds.size === 0;
-  }
-  if (elements.deleteSelectedCount) {
-    elements.deleteSelectedCount.textContent = `Selected ${pendingDeleteIds.size} item(s)`;
-  }
-}
+  const confirmed = await showModal({
+    title: 'Delete?',
+    message: `Delete "${transaction.category}" (${formatMoney(transaction.amount)})?`,
+    icon: 'ri-delete-bin-line',
+    confirmText: 'Delete',
+    cancelText: 'Cancel'
+  });
 
-function enterDeleteMode() {
-  deleteMode = true;
-  pendingDeleteIds.clear();
-  renderHistory();
-}
+  if (confirmed) {
+    showLoading();
+    await deleteTransactions([id]);
+    hideLoading();
 
-function exitDeleteMode() {
-  deleteMode = false;
-  pendingDeleteIds.clear();
-  renderHistory();
+    transactions = transactions.filter(t => t.id !== id);
+    renderAll();
+    showNotice(elements.formMessage, 'success', 'Transaction deleted');
+  } else {
+    // Reset swipe position
+    renderHistory();
+  }
 }
 
 // ============================================
@@ -279,62 +259,8 @@ function setupEventListeners() {
     renderHistory();
   });
 
-  elements.deleteToggleBtn?.addEventListener('click', enterDeleteMode);
-  elements.deleteCancelBtn?.addEventListener('click', exitDeleteMode);
-
-  elements.deleteConfirmBtn?.addEventListener('click', async () => {
-    if (pendingDeleteIds.size === 0) return;
-
-    showLoading();
-    await deleteTransactions(pendingDeleteIds);
-    hideLoading();
-
-    const idsToDelete = new Set(pendingDeleteIds);
-    transactions = transactions.filter(t => !idsToDelete.has(t.id));
-    showNotice(elements.formMessage, 'success', `Deleted ${idsToDelete.size} item(s)`);
-    exitDeleteMode();
-    renderAll();
-  });
-
-  elements.historyList?.addEventListener('click', (e) => {
-    if (!deleteMode) return;
-    const item = e.target.closest('.history-item');
-    if (!item) return;
-
-    const id = item.dataset.id;
-    if (pendingDeleteIds.has(id)) {
-      pendingDeleteIds.delete(id);
-    } else {
-      pendingDeleteIds.add(id);
-    }
-    renderHistory();
-  });
-
-  elements.deleteAllBtn?.addEventListener('click', async () => {
-    if (transactions.length === 0) return;
-
-    const confirmed = await showModal({
-      title: 'Delete All?',
-      message: `Delete all ${transactions.length} transactions?\n\nData in All Time will also be deleted.`,
-      icon: 'ri-delete-bin-line',
-      confirmText: 'Delete All',
-      cancelText: 'Cancel'
-    });
-
-    if (confirmed) {
-      showLoading();
-      await deleteTransactions(transactions.map(t => t.id));
-      hideLoading();
-
-      transactions = [];
-      exitDeleteMode();
-      renderAll();
-      showNotice(elements.formMessage, 'success', 'All transactions deleted');
-    }
-  });
-
-  // Setup Budget listeners (will be re-initialized when transactions change)
-  setupBudgetListeners(transactions, renderAll);
+  // Setup Budget listeners - pass a getter function for real-time transactions access
+  setupBudgetListeners(() => transactions, renderAll);
 }
 
 // ============================================
